@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codenames - </title>
+    <style>
+      :root {
+        --blue-team-color: rgba(0, 100, 255, 0.95);
+        --red-team-color: rgba(255, 50, 50, 0.95);
+        --neutral-color: rgba(200, 180, 120, 0.95);
+        --assassin-color: rgba(0, 0, 0, 0.95);
+        --card-width: 160px;
+        --card-height: 100px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background-image: url('background.png');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      .game-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        max-width: 1400px;
+        padding: 20px;
+      }
+
+      .game-board {
+        display: grid;
+        grid-template-columns: repeat(5, var(--card-width));
+        grid-template-rows: repeat(5, var(--card-height));
+        gap: 10px;
+        margin: 0 20px;
+      }
+
+      .card {
+        position: relative;
+        width: var(--card-width);
+        height: var(--card-height);
+        background-image: url("cardback.png");
+        background-size: cover;
+        background-position: center;
+        border: 2px solid rgba(0, 0, 0, 0.7);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .card-name {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(255, 255, 255, 0.9);
+        color: black;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        min-width: 100px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+      }
+
+      .team-panel {
+        width: 300px;
+        background-color: rgba(20, 20, 20, 0.6);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .blue-team {
+        background-color: var(--blue-team-color);
+        box-shadow: 0 0 20px rgba(0, 100, 255, 0.3);
+      }
+
+      .red-team {
+        background-color: var(--red-team-color);
+        box-shadow: 0 0 20px rgba(255, 50, 50, 0.3);
+      }
+
+      .team-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .team-score {
+        font-size: 4rem;
+        font-weight: bold;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        margin: 10px 0 20px;
+        color: white;
+      }
+
+      .team-roles {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .role-container {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+      }
+
+      .role-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .join-button {
+        background-color: rgb(255, 255, 78);
+        color: black;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(255, 255, 78, 0.5);
+        transition: all 0.2s;
+      }
+
+      .join-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(255, 255, 78, 0.7);
+      }
+
+      .player-slot {
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 8px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+      
+      .player-active {
+        background-color: rgba(255, 255, 100, 0.9);
+        color: black;
+        box-shadow: 0 0 10px rgba(255, 255, 100, 0.5);
+      }
+      
+      .player-controls {
+        margin-top: 20px;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 15px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .current-player {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      #player-selector {
+        padding: 5px 10px;
+        background-color: white;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      
+      .chat-container {
+        width: 80%;
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+      
+      .chat-messages {
+        height: 150px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+      }
+      
+      .chat-message {
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        max-width: 80%;
+      }
+      
+      .chat-message.blue-team {
+        background-color: var(--blue-team-color);
+        box-shadow: 0 0 10px rgba(0, 100, 255, 0.3);
+        align-self: flex-start;
+      }
+      
+      .chat-message.red-team {
+        background-color: var(--red-team-color);
+        box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+        align-self: flex-end;
+        margin-left: auto;
+      }
+      
+      .message-sender {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+      
+      .message-text {
+        word-break: break-word;
+      }
+      
+      .chat-input-container {
+        display: flex;
+        gap: 10px;
+      }
+      
+      #chat-input {
+        flex-grow: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+      
+      #send-chat {
+        padding: 8px 15px;
+        background-color: rgb(255, 255, 78);
+        color: black;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      
+      .end-turn-button {
+        background-color: rgb(255, 255, 78);
+        color: black;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(255, 255, 78, 0.5);
+        transition: all 0.2s;
+      }
+      
+      .end-turn-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(255, 255, 78, 0.7);
+      }
+
+      .game-title {
+        font-size: 3rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        margin-bottom: 30px;
+        font-weight: bold;
+      }
+
+      .card.revealed-blue {
+        background-color: var(--blue-team-color);
+        background-image: none;
+        box-shadow: 0 0 15px rgba(0, 100, 255, 0.5);
+      }
+
+      .card.revealed-red {
+        background-color: var(--red-team-color);
+        background-image: none;
+        box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+      }
+
+      .card.revealed-neutral {
+        background-color: var(--neutral-color);
+        background-image: none;
+        box-shadow: 0 0 15px rgba(200, 180, 120, 0.5);
+      }
+
+      .card.revealed-assassin {
+        background-color: var(--assassin-color);
+        background-image: none;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      }
+      
+      .card.revealed-blue .card-name,
+      .card.revealed-red .card-name,
+      .card.revealed-assassin .card-name {
+        color: white;
+        background-color: rgba(0, 0, 0, 0.3);
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+      }
+
+      .game-controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .turn-indicator {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      .spymaster-controls {
+        width: 80%;
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .hint-input-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      #hint-word {
+        flex-grow: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      #hint-number {
+        width: 80px;
+        padding: 8px;
+        border: none;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      #give-hint {
+        padding: 8px 15px;
+        background-color: rgb(255, 255, 78);
+        color: black;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .current-hint {
+        color: white;
+        font-size: 1.1em;
+      }
+
+      @media (max-width: 1400px) {
+        .game-container {
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .team-panel {
+          display: flex;
+          width: 90%;
+          max-width: 900px;
+          margin-bottom: 20px;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .team-avatar {
+          width: 100px;
+          height: 100px;
+          margin-bottom: 0;
+        }
+        
+        .team-roles {
+          flex-direction: row;
+          gap: 10px;
+        }
+        
+        .role-container {
+          flex: 1;
+        }
+        
+        .game-board {
+          margin: 20px 0;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .game-board {
+          grid-template-columns: repeat(5, 1fr);
+          grid-template-rows: repeat(5, 80px);
+          width: 90%;
+        }
+        
+        .card {
+          width: 100%;
+          height: 100%;
+        }
+        
+        .card-name {
+          font-size: 14px;
+          min-width: 80px;
+        }
+      }
+
+      .game-events {
+        color: white;
+      }
+
+      .event-item {
+        margin-bottom: 8px;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .event-item.blue {
+        border-left: 4px solid var(--blue-team-color);
+        background-color: rgba(0, 100, 255, 0.1);
+      }
+
+      .event-item.red {
+        border-left: 4px solid var(--red-team-color);
+        background-color: rgba(255, 50, 50, 0.1);
+      }
+
+      .event-item.system {
+        border-left: 4px solid #666;
+      }
+
+      .card.spymaster-view {
+        position: relative;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      }
+
+      .card.spymaster-view::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        border-radius: 10px;
+        z-index: 1;
+      }
+
+      .card.spymaster-view[data-type="blue"]::before {
+        background: linear-gradient(135deg, rgba(0, 100, 255, 0.4), rgba(0, 100, 255, 0.2));
+        box-shadow: 0 0 20px rgba(0, 100, 255, 0.4);
+      }
+
+      .card.spymaster-view[data-type="red"]::before {
+        background: linear-gradient(135deg, rgba(255, 50, 50, 0.4), rgba(255, 50, 50, 0.2));
+        box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
+      }
+
+      .card.spymaster-view[data-type="neutral"]::before {
+        background: linear-gradient(135deg, rgba(200, 180, 120, 0.4), rgba(200, 180, 120, 0.2));
+        box-shadow: 0 0 20px rgba(200, 180, 120, 0.4);
+      }
+
+      .card.spymaster-view[data-type="assassin"]::before {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      }
+
+      .card.spymaster-view .card-name {
+        position: relative;
+        z-index: 2;
+        background: rgba(255, 255, 255, 0.95);
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .card.spymaster-view[data-type="blue"] .card-name {
+        border: 2px solid rgba(0, 100, 255, 0.8);
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(240, 245, 255, 0.95));
+      }
+
+      .card.spymaster-view[data-type="red"] .card-name {
+        border: 2px solid rgba(255, 50, 50, 0.8);
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 240, 240, 0.95));
+      }
+
+      .card.spymaster-view[data-type="neutral"] .card-name {
+        border: 2px solid rgba(200, 180, 120, 0.8);
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 250, 240, 0.95));
+      }
+
+      .card.spymaster-view[data-type="assassin"] .card-name {
+        border: 2px solid rgba(0, 0, 0, 0.8);
+        background: linear-gradient(to bottom, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Enhanced color indicator dot */
+      .card.spymaster-view::after {
+        content: '';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        z-index: 2;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .card.spymaster-view[data-type="blue"]::after {
+        background: linear-gradient(135deg, #0064ff, #0044cc);
+        box-shadow: 0 0 15px rgba(0, 100, 255, 0.6);
+      }
+
+      .card.spymaster-view[data-type="red"]::after {
+        background: linear-gradient(135deg, #ff3232, #cc0000);
+        box-shadow: 0 0 15px rgba(255, 50, 50, 0.6);
+      }
+
+      .card.spymaster-view[data-type="neutral"]::after {
+        background: linear-gradient(135deg, #c8b478, #a89a68);
+        box-shadow: 0 0 15px rgba(200, 180, 120, 0.6);
+      }
+
+      .card.spymaster-view[data-type="assassin"]::after {
+        background: linear-gradient(135deg, #000000, #333333);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+      }
+
+      /* Add a subtle pattern overlay */
+      .card.spymaster-view::before {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="game-title">Codenames - </h1>
+    
+    <div class="game-container">
+      <div class="team-panel blue-team">
+        <img src="cat1.png" alt="Blue Team Avatar" class="team-avatar" />
+        <div class="team-info">
+          <div class="team-score">9</div>
+          <div class="team-roles">
+            <div class="role-container" id="blue-spymaster-container">
+              <div class="role-title">Spymaster</div>
+              <div class="player-slot" id="blue-spymaster-slot">Not Joined</div>
+              <button class="join-button" data-team="blue" data-role="spymaster">Join as Spymaster</button>
+            </div>
+            <div class="role-container" id="blue-operative-container">
+              <div class="role-title">Operative</div>
+              <div class="player-slot" id="blue-operative-slot">Not Joined</div>
+              <button class="join-button" data-team="blue" data-role="operative">Join as Operative</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-board" id="gameBoard">
+        <!-- Cards will be generated by JavaScript -->
+      </div>
+
+      <div class="team-panel red-team">
+        <img src="cat2.jpg" alt="Red Team Avatar" class="team-avatar" />
+        <div class="team-info">
+          <div class="team-score">8</div>
+          <div class="team-roles">
+            <div class="role-container" id="red-spymaster-container">
+              <div class="role-title">Spymaster</div>
+              <div class="player-slot" id="red-spymaster-slot">Not Joined</div>
+              <button class="join-button" data-team="red" data-role="spymaster">Join as Spymaster</button>
+            </div>
+            <div class="role-container" id="red-operative-container">
+              <div class="role-title">Operative</div>
+              <div class="player-slot" id="red-operative-slot">Not Joined</div>
+              <button class="join-button" data-team="red" data-role="operative">Join as Operative</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-controls">
+      <div class="turn-indicator">Blue Team's Turn</div>
+      <button class="end-turn-button">End Turn</button>
+    </div>
+    
+    <div class="player-controls">
+      <div class="current-player">
+        <span>Current Player: </span>
+        <select id="player-selector">
+          <option value="player1">Player 1</option>
+          <option value="player2">Player 2</option>
+          <option value="player3">Player 3</option>
+          <option value="player4">Player 4</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="spymaster-controls" style="display: none;">
+      <div class="hint-input-container">
+        <input type="text" id="hint-word" placeholder="Enter your hint word...">
+        <input type="number" id="hint-number" min="1" max="9" value="1" placeholder="Number of words">
+        <button id="give-hint">Give Hint</button>
+      </div>
+      <div class="current-hint" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 5px;">
+        <div>Current Hint: <span id="current-hint-text">None</span></div>
+        <div>Words to find: <span id="words-to-find">0</span></div>
+      </div>
+    </div>
+
+    <div class="game-events" style="width: 80%; max-width: 600px; margin: 20px auto; background-color: rgba(0, 0, 0, 0.5); border-radius: 10px; padding: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);">
+      <h3 style="color: white; margin-bottom: 10px;">Game Events</h3>
+      <div id="game-events-list" style="height: 150px; overflow-y: auto; padding: 10px; background-color: rgba(255, 255, 255, 0.1); border-radius: 5px;">
+        <!-- Events will be added here -->
+      </div>
+    </div>
+
+    <script>
+      // Function to fetch and process Arabic words from the GitHub repository
+      async function fetchArabicWords() {
+        const url = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2016/ar/ar_50k.txt";
+        // const url = "Words.txt"
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.status}`);
+          }
+          
+          const text = await response.text();
+          
+          // Parse the file content (format is typically: word frequency)
+          const wordLines = text.split('\n');
+          
+          // Extract only the words (first part before space) and filter out empty lines
+          const words = wordLines
+            .map(line => line.trim().split(' ')[0])
+            .filter(word => {
+              // Filter words that are:
+              // 1. Not empty
+              // 2. Between 3-8 characters
+              // 3. Don't contain numbers or special characters
+              return word && 
+                     word.length >= 3 && 
+                     word.length <= 8 && 
+                     /^[\u0600-\u06FF\s]+$/.test(word); // Only Arabic characters
+            });
+          
+          // Shuffle and get a selection of words
+          return shuffleArray(words).slice(0, 25); // Get 25 words for the game
+        } catch (error) {
+          console.error("Error fetching Arabic words:", error);
+          return getDefaultArabicWords();
+        }
+      }
+      
+      // Fallback default Arabic words function
+      function getDefaultArabicWords() {
+        return shuffleArray(
+          ["كتاب", "قمر", "شمس", "بيت", "مدرسة",
+          "سيارة", "باب", "كرسي", "بحر", "جبل",
+          "وردة", "طاولة", "سمك", "هاتف", "مفتاح",
+          "شجرة", "طريق", "ولد", "بنت", "نجم",
+          "عصفور", "كوب", "ساعة", "حديقة", "طائرة"]);
+      }
+      
+      // Function to shuffle an array (Fisher-Yates algorithm)
+      function shuffleArray(array) {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+      }
+      
+      // Game state management
+      let gameState = {
+        currentTurn: "blue",
+        blueCardsLeft: 9,
+        redCardsLeft: 8,
+        gameOver: false,
+        winner: null,
+        blueTeam: {
+          spymaster: null,
+          operative: null
+        },
+        redTeam: {
+          spymaster: null,
+          operative: null
+        },
+        players: {},
+        currentPlayerId: null,
+        currentHint: {
+          word: null,
+          number: 0,
+          remainingGuesses: 0
+        },
+        events: []
+      };
+
+      // Handle card clicks
+      function handleCardClick(card) {
+        if (gameState.gameOver) return;
+        if (card.dataset.revealed === "true") return;
+
+        const currentPlayer = gameState.players[gameState.currentPlayerId];
+        if (!currentPlayer || currentPlayer.role !== 'operative') {
+          alert("Only operatives can guess words!");
+          return;
+        }
+
+        if (currentPlayer.team !== gameState.currentTurn) {
+          alert("It's not your team's turn!");
+          return;
+        }
+
+        if (!gameState.currentHint.word) {
+          alert("Wait for your spymaster to give a hint!");
+          return;
+        }
+
+        const cardType = card.dataset.type;
+        const cardWord = card.querySelector('.card-name').textContent;
+        card.dataset.revealed = "true";
+        card.classList.add(`revealed-${cardType}`);
+
+        // Add event for card reveal
+        addGameEvent(`${currentPlayer.team.toUpperCase()} team revealed: "${cardWord}"`, currentPlayer.team);
+
+        // Update game state based on card type
+        if (cardType === gameState.currentTurn) {
+          gameState[`${gameState.currentTurn}CardsLeft`]--;
+          gameState.currentHint.remainingGuesses--;
+          alert(`${gameState.currentTurn.toUpperCase()} team found their word!`);
+        } else if (cardType === "neutral") {
+          alert("Neutral word revealed! Turn ends.");
+          addGameEvent("Neutral word revealed - Turn ends", 'system');
+          endTurn();
+          return;
+        } else if (cardType === "assassin") {
+          gameState.gameOver = true;
+          gameState.winner = gameState.currentTurn === "blue" ? "red" : "blue";
+          alert(`Game Over! ${gameState.winner.toUpperCase()} team wins! The assassin was revealed!`);
+          addGameEvent(`Game Over! ${gameState.winner.toUpperCase()} team wins! The assassin was revealed!`, 'system');
+        } else {
+          // Wrong team's word
+          gameState[`${cardType}CardsLeft`]--;
+          alert(`Wrong team's word revealed! Turn ends.`);
+          addGameEvent(`Wrong team's word revealed - Turn ends`, 'system');
+          endTurn();
+          return;
+        }
+
+        // Check if guesses are exhausted
+        if (gameState.currentHint.remainingGuesses <= 0) {
+          alert("No more guesses left! Turn ends.");
+          addGameEvent("No more guesses left - Turn ends", 'system');
+          endTurn();
+          return;
+        }
+
+        // Check for win conditions
+        if (gameState.blueCardsLeft === 0) {
+          gameState.gameOver = true;
+          gameState.winner = "blue";
+          alert("Game Over! BLUE team wins!");
+          addGameEvent("Game Over! BLUE team wins!", 'blue');
+        } else if (gameState.redCardsLeft === 0) {
+          gameState.gameOver = true;
+          gameState.winner = "red";
+          alert("Game Over! RED team wins!");
+          addGameEvent("Game Over! RED team wins!", 'red');
+        }
+
+        // Update UI
+        updateGameUI();
+      }
+
+      // Update game UI
+      function updateGameUI() {
+        // Update scores
+        blueScoreEl.textContent = gameState.blueCardsLeft;
+        redScoreEl.textContent = gameState.redCardsLeft;
+
+        // Update turn indicator
+        turnIndicator.textContent = `${gameState.currentTurn.toUpperCase()} Team's Turn`;
+
+        // Update player slots
+        Object.keys(playerSlots).forEach(slotId => {
+          const [team, role] = slotId.split("-");
+          const player = gameState[`${team}Team`][role];
+          playerSlots[slotId].textContent = player || "Not Joined";
+          playerSlots[slotId].className = `player-slot ${player ? "player-active" : ""}`;
+        });
+
+        updateSpymasterControls();
+      }
+
+      // End turn function
+      function endTurn() {
+        if (gameState.gameOver) return;
+        
+        const oldTeam = gameState.currentTurn;
+        gameState.currentTurn = gameState.currentTurn === "blue" ? "red" : "blue";
+        gameState.currentHint = {
+          word: null,
+          number: 0,
+          remainingGuesses: 0
+        };
+        
+        // Update hint display
+        document.getElementById('current-hint-text').textContent = 'None';
+        document.getElementById('words-to-find').textContent = '0';
+        
+        // Switch to new team's spymaster
+        const newTeam = gameState.currentTurn;
+        const spymasterId = gameState[`${newTeam}Team`].spymaster;
+        
+        if (spymasterId) {
+          gameState.currentPlayerId = spymasterId;
+          playerSelector.value = spymasterId;
+        }
+        
+        alert(`${gameState.currentTurn.toUpperCase()} team's turn`);
+        addGameEvent(`Turn switched from ${oldTeam.toUpperCase()} to ${gameState.currentTurn.toUpperCase()}`, 'system');
+        
+        updateGameUI();
+        updateSpymasterControls();
+      }
+
+      // Join team function
+      function joinTeam(team, role) {
+        const currentPlayer = gameState.players[gameState.currentPlayerId];
+        if (!currentPlayer) return;
+
+        // Check if player is already in a team
+        if (currentPlayer.team) {
+          alert("You are already in a team!");
+          return;
+        }
+
+        // Check if role is already taken
+        if (gameState[`${team}Team`][role]) {
+          alert("This role is already taken!");
+          return;
+        }
+
+        // Assign player to team and role
+        currentPlayer.team = team;
+        currentPlayer.role = role;
+        gameState[`${team}Team`][role] = gameState.currentPlayerId;
+
+        alert(`${currentPlayer.name} joined ${team} team as ${role}`);
+        addGameEvent(`${currentPlayer.name} joined ${team} team as ${role}`, team);
+        updateGameUI();
+      }
+
+      // Modified window.onload
+      window.onload = function() {
+        // DOM elements
+        gameBoard = document.getElementById("gameBoard");
+        turnIndicator = document.querySelector(".turn-indicator");
+        endTurnButton = document.querySelector(".end-turn-button");
+        blueScoreEl = document.querySelector(".blue-team .team-score");
+        redScoreEl = document.querySelector(".red-team .team-score");
+        playerSelector = document.getElementById("player-selector");
+        
+        // Player slots
+        playerSlots = {
+          "blue-spymaster": document.getElementById("blue-spymaster-slot"),
+          "blue-operative": document.getElementById("blue-operative-slot"),
+          "red-spymaster": document.getElementById("red-spymaster-slot"),
+          "red-operative": document.getElementById("red-operative-slot")
+        };
+        
+        // Setup team buttons
+        const joinButtons = document.querySelectorAll(".join-button");
+        joinButtons.forEach(button => {
+          button.addEventListener("click", function() {
+            const team = this.dataset.team;
+            const role = this.dataset.role;
+            joinTeam(team, role);
+          });
+        });
+        
+        // Setup end turn button
+        endTurnButton.addEventListener("click", endTurn);
+        
+        // Setup player selector
+        playerSelector.addEventListener("change", function() {
+          gameState.currentPlayerId = this.value;
+          updateGameUI();
+        });
+      
+        // Add a "New Game" button
+        const gameControls = document.querySelector(".game-controls");
+        const newGameButton = document.createElement("button");
+        newGameButton.className = "end-turn-button";
+        newGameButton.textContent = "New Game";
+        newGameButton.addEventListener("click", startGameWithArabicWords);
+        gameControls.appendChild(newGameButton);
+      
+        // Start the game
+        startGameWithArabicWords();
+      };
+      
+      // Helper function to add system messages to the chat
+      function addSystemMessage(message) {
+        if (!chatMessages) return;
+        
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "chat-message";
+        messageDiv.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+        
+        const messageText = document.createElement("div");
+        messageText.className = "message-text";
+        messageText.textContent = message;
+        
+        messageDiv.appendChild(messageText);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      // Add this function to handle spymaster controls visibility
+      function updateSpymasterControls() {
+        const spymasterControls = document.querySelector('.spymaster-controls');
+        const currentPlayer = gameState.players[gameState.currentPlayerId];
+        
+        // Show/hide spymaster controls
+        if (currentPlayer && 
+            currentPlayer.team === gameState.currentTurn && 
+            currentPlayer.role === 'spymaster') {
+          spymasterControls.style.display = 'block';
+        } else {
+          spymasterControls.style.display = 'none';
+        }
+
+        // Update card visibility for spymasters
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+          if (currentPlayer && currentPlayer.role === 'spymaster') {
+            card.classList.add('spymaster-view');
+          } else {
+            card.classList.remove('spymaster-view');
+          }
+        });
+      }
+
+      // Modify giveHint function
+      function giveHint() {
+        const hintWord = document.getElementById('hint-word').value.trim();
+        const hintNumber = parseInt(document.getElementById('hint-number').value);
+
+        if (!hintWord) {
+          addSystemMessage("Please enter a hint word!");
+          return;
+        }
+
+        if (hintNumber < 1 || hintNumber > 9) {
+          addSystemMessage("Number of words must be between 1 and 9!");
+          return;
+        }
+
+        const currentPlayer = gameState.players[gameState.currentPlayerId];
+        if (!currentPlayer || currentPlayer.role !== 'spymaster') {
+          addSystemMessage("Only the spymaster can give hints!");
+          return;
+        }
+
+        gameState.currentHint = {
+          word: hintWord,
+          number: hintNumber,
+          remainingGuesses: hintNumber + 1
+        };
+
+        // Update UI
+        document.getElementById('current-hint-text').textContent = hintWord;
+        document.getElementById('words-to-find').textContent = hintNumber;
+        document.getElementById('hint-word').value = '';
+        
+        addGameEvent(`${currentPlayer.team.toUpperCase()} team's spymaster gave the hint: "${hintWord}" for ${hintNumber} words`, currentPlayer.team);
+        addSystemMessage(`${currentPlayer.team.toUpperCase()} team's spymaster gave the hint: "${hintWord}" for ${hintNumber} words`);
+        
+        // Switch to operative's turn
+        switchToOperative();
+      }
+
+      // Add new function to switch to operative
+      function switchToOperative() {
+        const currentTeam = gameState.currentTurn;
+        const operativeId = gameState[`${currentTeam}Team`].operative;
+        
+        if (operativeId) {
+          // Switch to operative
+          gameState.currentPlayerId = operativeId;
+          playerSelector.value = operativeId;
+          
+          // Clear chat
+          chatMessages.innerHTML = '';
+          gameState.chatMessages = [];
+          
+          // Update UI
+          updateGameUI();
+          updateSpymasterControls();
+          
+          addSystemMessage(`Switched to ${currentTeam.toUpperCase()} team's operative`);
+          addGameEvent(`Switched to ${currentTeam.toUpperCase()} team's operative`, 'system');
+        } else {
+          addSystemMessage("No operative available for this team!");
+        }
+      }
+
+      // Add event listener for hint button
+      document.getElementById('give-hint').addEventListener('click', giveHint);
+
+      // Add function to add events
+      function addGameEvent(event, type = 'system') {
+        const eventItem = document.createElement('div');
+        eventItem.className = `event-item ${type}`;
+        eventItem.textContent = event;
+        
+        const eventsList = document.getElementById('game-events-list');
+        eventsList.appendChild(eventItem);
+        eventsList.scrollTop = eventsList.scrollHeight;
+        
+        gameState.events.push({ event, type });
+      }
+
+      // Add this function to generate random card distribution
+      function generateRandomCardDistribution() {
+        // Create array of 25 positions
+        const positions = Array(25).fill(null);
+        
+        // Define card counts
+        const cardCounts = {
+          blue: 9,
+          red: 8,
+          neutral: 7,
+          assassin: 1
+        };
+        
+        // Place cards randomly
+        Object.entries(cardCounts).forEach(([type, count]) => {
+          for (let i = 0; i < count; i++) {
+            let position;
+            do {
+              position = Math.floor(Math.random() * 25);
+            } while (positions[position] !== null);
+            positions[position] = type;
+          }
+        });
+        
+        return positions;
+      }
+
+      // Modify startGameWithArabicWords function
+      function startGameWithArabicWords() {
+        // Game state variables
+        gameState = {
+          currentTurn: "blue", // blue or red
+          blueCardsLeft: 9,
+          redCardsLeft: 8,
+          gameOver: false,
+          winner: null,
+          blueTeam: {
+            spymaster: null,
+            operative: null
+          },
+          redTeam: {
+            spymaster: null,
+            operative: null
+          },
+          players: {
+            player1: { id: "player1", name: "Player 1", team: null, role: null },
+            player2: { id: "player2", name: "Player 2", team: null, role: null },
+            player3: { id: "player3", name: "Player 3", team: null, role: null },
+            player4: { id: "player4", name: "Player 4", team: null, role: null }
+          },
+          currentPlayerId: "player1",
+          currentHint: {
+            word: null,
+            number: 0,
+            remainingGuesses: 0
+          },
+          events: []
+        };
+
+        // Generate random card distribution
+        cardTypes = generateRandomCardDistribution();
+
+        // Initialize the game with Arabic words
+        initializeGame();
+        document.getElementById('game-events-list').innerHTML = '';
+        addGameEvent("Game started! Blue team goes first.", 'system');
+      }
+      
+      // Modify initializeGame function to use random distribution
+      function initializeGame() {
+        gameBoard.innerHTML = ""; // Clear the board
+        
+        // Show loading state
+        const loadingMessage = document.createElement("div");
+        loadingMessage.textContent = "Loading Arabic words...";
+        loadingMessage.style.position = "absolute";
+        loadingMessage.style.top = "50%";
+        loadingMessage.style.left = "50%";
+        loadingMessage.style.transform = "translate(-50%, -50%)";
+        loadingMessage.style.color = "white";
+        loadingMessage.style.fontSize = "24px";
+        document.body.appendChild(loadingMessage);
+        
+        // Fetch words and then create cards
+        fetchArabicWords().then(words => {
+          document.body.removeChild(loadingMessage);
+          
+          // Create cards with fetched words
+          words.forEach((word, index) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.id = `card-${index}`;
+            card.dataset.type = cardTypes[index];
+            card.dataset.revealed = "false";
+            
+            const cardName = document.createElement("div");
+            cardName.className = "card-name";
+            cardName.textContent = word;
+            
+            // Add extra styling for Arabic text
+            cardName.style.fontFamily = "Arial, sans-serif";
+            cardName.style.direction = "rtl";
+            cardName.style.fontSize = "16px";
+            
+            card.appendChild(cardName);
+            gameBoard.appendChild(card);
+            
+            // Add click event
+            card.addEventListener("click", function() {
+              handleCardClick(this);
+            });
+          });
+      
+          // Update UI
+          updateGameUI();
+        }).catch(error => {
+          console.error("Failed to initialize game:", error);
+          document.body.removeChild(loadingMessage);
+          
+          // Use default words as fallback
+          initializeGameWithDefaultWords();
+        });
+      }
+      
+      // Modify initializeGameWithDefaultWords to use random distribution
+      function initializeGameWithDefaultWords() {
+        gameBoard.innerHTML = ""; // Clear the board
+        
+        const defaultWords = getDefaultArabicWords();
+        
+        // Create cards with default words
+        defaultWords.forEach((word, index) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.id = `card-${index}`;
+          card.dataset.type = cardTypes[index];
+          card.dataset.revealed = "false";
+          
+          const cardName = document.createElement("div");
+          cardName.className = "card-name";
+          cardName.textContent = word;
+          cardName.style.direction = "rtl";
+          
+          card.appendChild(cardName);
+          gameBoard.appendChild(card);
+          
+          card.addEventListener("click", function() {
+            handleCardClick(this);
+          });
+        });
+      
+        updateGameUI();
+      }
+      
+      // Add this function to handle fetching issues
+      window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('fetch')) {
+          console.error('Fetch error detected:', e);
+          alert('There was an issue loading Arabic words. Using default words instead.');
+          initializeGameWithDefaultWords();
+        }
+      });
+    </script>
+  </body>
+</html>
